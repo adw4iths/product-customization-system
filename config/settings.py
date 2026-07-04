@@ -82,7 +82,8 @@ CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
-
+CELERY_TASK_ALWAYS_EAGER = True       # run jobs synchronously, no Redis/worker needed
+CELERY_TASK_EAGER_PROPAGATES = True   # so errors surface immediately instead of hiding
 # Cap uploaded design resolution server-side to keep processing time bounded
 # (spec section C: "Efficiency... within a very short timeframe").
 MAX_DESIGN_DIMENSION_PX = 3000

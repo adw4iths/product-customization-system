@@ -21,12 +21,51 @@ AUTO_CALIBRATED_SAMPLES = [
 # upload them) -- print area is specified explicitly, exactly as an admin
 # would enter it in the admin panel for a brand new product photo.
 MANUAL_SAMPLES = [
-    # name,          slug,          view,    image path,                                    x,   y,   w,   h,  max_tilt_deg
-    ("Pink Tee",       "pink-tee",       "back",  "products/pink_tee/back/base.jpg",       599, 810, 799, 900, 18.0),
-    ("Maroon Tee",      "maroon-tee",     "front", "products/maroon_tee/front/base.jpg",     600, 436, 800, 634, 18.0),
-    ("Two-Tone Cap",    "twotone-cap",    "side",  "products/twotone_cap/side/base.jpg",     432, 768, 720, 528, 8.0),
-    ("Two-Tone Cap Alt", "twotone-cap-alt", "side", "products/twotone_cap_alt/side/base.jpg", 1317, 1063, 552, 441, 8.0),
-    ("Khaki Cap",        "khaki-cap",      "front", "products/khaki_cap/front/base.jpg",      158, 87, 241, 144, 18.0),
+
+    ("Pink Tee", "pink-tee", "back",
+     "products/pink_tee/back/base.jpg",
+     599, 810, 799, 900, 18.0),
+
+    ("Maroon Tee", "maroon-tee", "front",
+     "products/maroon_tee/front/base.jpg",
+     600, 436, 800, 634, 18.0),
+
+    ("Two-Tone Cap", "twotone-cap", "side",
+     "products/twotone_cap/side/base.jpg",
+     432, 768, 720, 528, 8.0),
+
+    ("Two-Tone Cap Alt", "twotone-cap-alt", "side",
+     "products/twotone_cap_alt/side/base.jpg",
+     1317, 1063, 552, 441, 8.0),
+
+    ("Khaki Cap", "khaki-cap", "front",
+     "products/khaki_cap/front/base.jpg",
+     158, 87, 241, 144, 18.0),
+
+    # ---------------- NEW PRODUCT ----------------
+
+   (
+    "OTTO Sun Visor",
+    "otto-sun-visor",
+    "front",
+    "products/sunwisor/front/otto_front.jpg",
+    70,     # X
+    55,     # Y
+    420,    # W
+    115,    # H
+    18.0,
+),
+(
+    "OTTO Sun Visor",
+    "otto-sun-visor",
+    "side",
+    "products/sunwisor/side/otto_side.jpg",
+    201,
+    619,
+    1083,
+    1240,
+    18.0,
+),
 ]
 
 

@@ -12,6 +12,22 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def primary_image(self):
+        """
+        The image shown on the landing-page card and as the default large
+        image on the detail page. Prefers "front" if one exists (most
+        recognizable angle), otherwise just the first image available.
+        Returns None if the product has no images yet -- templates must
+        handle that case rather than assume an image always exists.
+        """
+        images = list(self.images.all())
+        if not images:
+            return None
+        for img in images:
+            if img.view == "front":
+                return img
+        return images[0]
 
 class ProductImage(models.Model):
     """

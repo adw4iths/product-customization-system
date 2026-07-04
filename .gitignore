@@ -1,22 +1,46 @@
+# ==========================
 # Python
+# ==========================
 __pycache__/
 *.py[cod]
 *.pyo
+*.log
 
+# ==========================
 # Virtual Environment
+# ==========================
 venv/
-
-# Django Database
-db.sqlite3
-
-# Uploaded media
-media/
-
-# VS Code
-.vscode/
-
-# Environment variables
 .env
 
-# Logs
-*.log
+# ==========================
+# VS Code
+# ==========================
+.vscode/
+
+# ==========================
+# Django Database
+# (Remove this line if you want your demo data
+# to be available on GitHub/Render)
+# ==========================
+# db.sqlite3
+
+# ==========================
+# Generated Media (Ignore)
+# ==========================
+media/designs/
+media/output/
+media/outputs/
+media/uploads/
+media/analysis/
+
+# ==========================
+# Keep Demo Product Images
+# ==========================
+!media/products/
+!media/products/**
+
+# ==========================
+# macOS / Windows
+# ==========================
+.DS_Store
+Thumbs.db

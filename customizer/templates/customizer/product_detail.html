@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ product.name }} - Customize</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+  a.back { color: #555; text-decoration: none; font-size: 14px; }
+  h1 { margin-top: 8px; }
+  #heroWrap {
+    background: #fafafa;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  #heroImage { max-width: 100%; max-height: 480px; border-radius: 6px; }
+  .placeholder { color: #999; padding: 80px 0; }
+  .view-picker { margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .view-thumb {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 4px;
+    background: #fafafa;
+    cursor: pointer;
+  }
+  .view-thumb img { display: block; width: 64px; height: 64px; object-fit: contain; }
+  .view-thumb .label { font-size: 12px; text-align: center; color: #666; text-transform: capitalize; }
+  .view-thumb.selected { border-color: #222; background: #fff; }
+  .controls { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input[type=file] { font-size: 15px; }
+  button {
+    font-size: 15px;
+    padding: 9px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #222;
+    color: white;
+    cursor: pointer;
+  }
+  button:disabled { background: #bbb; cursor: not-allowed; }
+  a.download-btn {
+    display: none;
+    font-size: 15px;
+    padding: 9px 16px;
+    border-radius: 6px;
+    background: #1a7f37;
+    color: white;
+    text-decoration: none;
+  }
+  #status { margin-top: 12px; font-family: monospace; color: #555; min-height: 1.2em; }
+</style>
+</head>
+<body>
+  <a class="back" href="{% url 'product-list-page' %}">&larr; All products</a>
+  <h1>{{ product.name }}</h1>
+
+  <div id="heroWrap">
+    {% if product.primary_image %}
+      <img id="heroImage"
+           src="{{ product.primary_image.base_image.url }}"
+           data-product-image-id="{{ product.primary_image.id }}"
+           alt="{{ product.name }}">
+    {% else %}
+      <div class="placeholder" id="heroImage" data-product-image-id="">
+        No product image uploaded yet.
+      </div>
+    {% endif %}
+  </div>
+
+  {% if product.images.count > 1 %}
+  <div class="view-picker" id="viewPicker">
+    {% for img in product.images.all %}
+      <div class="view-thumb {% if img.id == product.primary_image.id %}selected{% endif %}"
+           data-image-id="{{ img.id }}"
+           data-image-url="{{ img.base_image.url }}">
+        <img src="{{ img.base_image.url }}" alt="{{ img.get_view_display }}">
+        <div class="label">{{ img.view }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="controls">
+    <input type="file" id="designFile" accept="image/*">
+    <button id="generateBtn" disabled>Generate Mockup</button>
+    <a id="downloadBtn" class="download-btn" download>Download</a>
+  </div>
+  <p id="status"></p>
+
+<script>
+(function () {
+  var heroEl = document.getElementById('heroImage');
+  var productImageId = heroEl.dataset.productImageId || null;
+
+  var fileInput = document.getElementById('designFile');
+  var generateBtn = document.getElementById('generateBtn');
+  var downloadBtn = document.getElementById('downloadBtn');
+  var statusEl = document.getElementById('status');
+  var viewPicker = document.getElementById('viewPicker');
+
+  function refreshGenerateEnabled() {
+    generateBtn.disabled = !(fileInput.files.length && productImageId);
+  }
+
+  fileInput.addEventListener('change', refreshGenerateEnabled);
+
+  // Switching views: swap the hero image + which product_image_id future
+  // "Generate Mockup" calls target. Does NOT re-run any pending job -- it's
+  // just picking which side of the product you're about to customize next.
+  if (viewPicker) {
+    viewPicker.addEventListener('click', function (e) {
+      var thumb = e.target.closest('.view-thumb');
+      if (!thumb) return;
+
+      productImageId = thumb.dataset.imageId;
+
+      var current = document.getElementById('heroImage');
+      var img = document.createElement('img');
+      img.id = 'heroImage';
+      img.src = thumb.dataset.imageUrl;
+      img.dataset.productImageId = productImageId;
+      current.replaceWith(img);
+      heroEl = img;
+
+      var selected = viewPicker.querySelector('.view-thumb.selected');
+      if (selected) selected.classList.remove('selected');
+      thumb.classList.add('selected');
+
+      downloadBtn.style.display = 'none';
+      statusEl.textContent = '';
+      refreshGenerateEnabled();
+    });
+  }
+
+  generateBtn.addEventListener('click', function () {
+    if (!fileInput.files.length) return;
+    generateBtn.disabled = true;
+    downloadBtn.style.display = 'none';
+    statusEl.textContent = 'Uploading logo...';
+
+    var form = new FormData();
+    form.append('file', fileInput.files[0]);
+
+    fetch('/api/designs/', { method: 'POST', body: form })
+      .then(function (r) { return r.json(); })
+      .then(function (upload) {
+        statusEl.textContent = 'Queuing mockup...';
+        return fetch('/api/customize/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ design_id: upload.id, product_image_id: productImageId }),
+        });
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (job) {
+        statusEl.textContent = 'Rendering...';
+        poll(job.id);
+      })
+      .catch(function (err) {
+        statusEl.textContent = 'Error: ' + err;
+        generateBtn.disabled = false;
+      });
+  });
+
+  function poll(jobId) {
+    fetch('/api/customize/' + jobId + '/')
+      .then(function (r) { return r.json(); })
+      .then(function (job) {
+        if (job.status === 'done') {
+          statusEl.textContent = 'Done.';
+          replaceHeroWithImage(job.result_image);
+          downloadBtn.href = job.result_image;
+          downloadBtn.style.display = 'inline-block';
+          generateBtn.disabled = false;
+        } else if (job.status === 'failed') {
+          statusEl.textContent = 'Failed: ' + job.error_message;
+          generateBtn.disabled = false;
+        } else {
+          statusEl.textContent = 'Status: ' + job.status + '...';
+          setTimeout(function () { poll(jobId); }, 700);
+        }
+      });
+  }
+
+  function replaceHeroWithImage(url) {
+    var current = document.getElementById('heroImage');
+    var img = document.createElement('img');
+    img.id = 'heroImage';
+    img.src = url;
+    img.dataset.productImageId = productImageId || '';
+    current.replaceWith(img);
+    heroEl = img;
+  }
+})();
+</script>
+</body>
+</html>
