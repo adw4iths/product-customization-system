@@ -5,36 +5,28 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 
 from customizer.models import ProductImage, ProductImageAnalysis
-from customizer.engine.pipeline import (
-    analyze_product_image,
-    load_bgr,
-)
+from customizer.engine.pipeline import analyze_product_image, load_bgr
 
 
 class Command(BaseCommand):
-    help = "Rebuild cached analysis (.npy height maps) for all product images."
+    help = "Rebuild cached ProductImageAnalysis for all ProductImages."
 
     def handle(self, *args, **options):
-
-        self.stdout.write(self.style.NOTICE("Rebuilding product analysis...\n"))
 
         images = ProductImage.objects.all()
 
         if not images.exists():
-            self.stdout.write(self.style.WARNING("No ProductImage records found."))
+            self.stdout.write(self.style.WARNING("No ProductImages found."))
             return
 
+        self.stdout.write(
+            self.style.NOTICE(f"Found {images.count()} product images.\n")
+        )
+
         for pi in images:
-
-            if not pi.base_image:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"Skipping {pi.product.name} ({pi.view}) - no image."
-                    )
-                )
-                continue
-
             try:
+                self.stdout.write(f"Processing {pi.product.name} ({pi.view})...")
+
                 base = load_bgr(pi.base_image.path)
 
                 result = analyze_product_image(
@@ -43,38 +35,40 @@ class Command(BaseCommand):
                     max_tilt_deg=pi.max_tilt_deg,
                 )
 
+                analysis, created = ProductImageAnalysis.objects.get_or_create(
+                    product_image=pi
+                )
+
+                analysis.quad_json = result.quad.tolist()
+                analysis.tilt_deg = result.meta["tilt_deg"]
+                analysis.foreshorten = result.meta["foreshorten"]
+
                 buffer = io.BytesIO()
                 np.save(buffer, result.height_map)
                 buffer.seek(0)
 
-                analysis, created = ProductImageAnalysis.objects.update_or_create(
-                    product_image=pi,
-                    defaults={
-                        "quad_json": result.quad.tolist(),
-                        "tilt_deg": result.meta["tilt_deg"],
-                        "foreshorten": result.meta["foreshorten"],
-                    },
-                )
-
                 analysis.height_map_file.save(
                     f"{pi.id}_height.npy",
                     ContentFile(buffer.read()),
-                    save=True,
+                    save=False,
                 )
+
+                analysis.save()
 
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"✓ {pi.product.name} ({pi.view})"
+                        f"✓ Finished {pi.product.name} ({pi.view})"
                     )
                 )
 
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(
-                        f"✗ {pi.product.name} ({pi.view}) -> {e}"
+                        f"✗ Failed {pi.product.name} ({pi.view})"
                     )
                 )
+                self.stdout.write(str(e))
 
         self.stdout.write(
-            self.style.SUCCESS("\nFinished rebuilding analysis.")
+            self.style.SUCCESS("\nAnalysis rebuild completed.")
         )
