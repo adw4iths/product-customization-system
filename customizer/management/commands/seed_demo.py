@@ -1,11 +1,13 @@
 from pathlib import Path
+
 import cv2
+
+from django.conf import settings
 from django.core.files import File
 from django.core.management.base import BaseCommand
-from django.conf import settings
 
-from customizer.models import Product, ProductImage
 from customizer.engine.calibration import detect_guide_box
+from customizer.models import Product, ProductImage
 
 
 # Samples whose print area is auto-calibrated from a red guide box baked
@@ -100,16 +102,27 @@ class Command(BaseCommand):
 
     def _create(self, product, view, src, area, max_tilt_deg=18.0):
         pi, created = ProductImage.objects.get_or_create(
-            product=product, view=view,
-            defaults=dict(
-                print_area_x=area["x"], print_area_y=area["y"],
-                print_area_w=area["w"], print_area_h=area["h"],
-                max_tilt_deg=max_tilt_deg,
-            ),
-        )
+        product=product,
+        view=view,
+        defaults=dict(
+            print_area_x=area["x"],
+            print_area_y=area["y"],
+            print_area_w=area["w"],
+            print_area_h=area["h"],
+            max_tilt_deg=max_tilt_deg,
+        ),
+    )
+
         if created:
             with open(src, "rb") as f:
-                pi.base_image.save(src.name, File(f), save=True)  # triggers analysis signal
-            self.stdout.write(self.style.SUCCESS(f"Created {product.name} / {view}  print_area={area}"))
+             pi.base_image.save(src.name, File(f), save=True)
+
+            self.stdout.write(
+             self.style.SUCCESS(
+                f"Created {product.name} / {view}  print_area={area}"
+            )
+        )
         else:
-            self.stdout.write(f"Already exists: {product.name} / {view}")
+            self.stdout.write(
+                f"Already exists: {product.name} / {view}"
+        )
