@@ -40,9 +40,7 @@ MANUAL_SAMPLES = [
      "products/twotone_cap_alt/side/base.jpg",
      1317, 1063, 552, 441, 8.0),
 
-    ("Khaki Cap", "khaki-cap", "front",
-     "products/khaki_cap/front/base.jpg",
-     158, 87, 241, 144, 18.0),
+
 
     # ---------------- NEW PRODUCT ----------------
 
@@ -56,18 +54,7 @@ MANUAL_SAMPLES = [
     420,    # W
     115,    # H
     18.0,
-),
-(
-    "OTTO Sun Visor",
-    "otto-sun-visor",
-    "side",
-    "products/sunwisor/side/otto_side.jpg",
-    201,
-    619,
-    1083,
-    1240,
-    18.0,
-),
+)
 ]
 
 
